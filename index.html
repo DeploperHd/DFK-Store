@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFK Store - Download Apps</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+        .app-card {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .app-card:hover {
+            transform: scale(1.05);
+        }
+        .app-icon {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+        }
+        .screenshot-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">DFK Store</a>
+            <button class="btn btn-outline-danger" id="logoutBtn" style="display: none;">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Auth Section -->
+        <div id="authSection">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+                    <ul class="nav nav-pills nav-fill mb-3" id="pills-tab" role="tablist">
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="pills-login-tab" data-bs-toggle="pill" data-bs-target="#pills-login" type="button" role="tab" aria-controls="pills-login" aria-selected="true">Login</button>
+                      </li>
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="pills-signup-tab" data-bs-toggle="pill" data-bs-target="#pills-signup" type="button" role="tab" aria-controls="pills-signup" aria-selected="false">Sign Up</button>
+                      </li>
+                    </ul>
+                    <div class="tab-content card" id="pills-tabContent">
+                        <!-- Login Form -->
+                        <div class="tab-pane fade show active p-4" id="pills-login" role="tabpanel" aria-labelledby="pills-login-tab">
+                            <h3 class="text-center mb-3">Login</h3>
+                             <form id="loginForm">
+                                <div class="mb-3">
+                                    <label for="loginEmail" class="form-label">Email address</label>
+                                    <input type="email" class="form-control" id="loginEmail" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="loginPassword" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="loginPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Login</button>
+                                <div id="loginError" class="text-danger mt-2"></div>
+                            </form>
+                        </div>
+                        <!-- Sign Up Form -->
+                        <div class="tab-pane fade p-4" id="pills-signup" role="tabpanel" aria-labelledby="pills-signup-tab">
+                             <h3 class="text-center mb-3">Sign Up</h3>
+                             <form id="signupForm">
+                                <div class="mb-3">
+                                    <label for="signupEmail" class="form-label">Email address</label>
+                                    <input type="email" class="form-control" id="signupEmail" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="signupPassword" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="signupPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Create Account</button>
+                                <div id="signupError" class="text-danger mt-2"></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- App Store View -->
+        <div id="appStoreSection" style="display: none;">
+            <h2 class="mb-4">Available Apps</h2>
+            <div id="appGrid" class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-4">
+                <!-- App cards will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- App Details Modal -->
+    <div class="modal fade" id="appDetailsModal" tabindex="-1" aria-labelledby="appDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAppName">App Name</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <img id="modalAppIcon" src="" class="img-fluid rounded mb-3" alt="App Icon">
+                            <p class="mb-1"><strong>Developer:</strong> <span id="modalDeveloper"></span></p>
+                            <p class="mb-1"><strong>Version:</strong> <span id="modalVersion"></span></p>
+                            <p class="mb-1"><strong>Category:</strong> <span id="modalCategory"></span></p>
+                        </div>
+                        <div class="col-md-8">
+                            <h4>Description</h4>
+                            <p id="modalDescription"></p>
+                            <hr>
+                            <h4>Screenshots</h4>
+                            <div id="modalScreenshots" class="d-flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="#" id="modalDownloadBtn" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Download Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    
+    <script>
+        // --- START: Firebase Configuration ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyAlEFPGjNyBiP6_nTqsZF-hB07bTjnLhiw",
+          authDomain: "dfk-store.firebaseapp.com",
+          projectId: "dfk-store",
+          storageBucket: "dfk-store.appspot.com",
+          messagingSenderId: "6068233753",
+          appId: "1:6068233753:web:2145f0f88bc783e5fcec88"
+        };
+        // --- END: Firebase Configuration ---
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const appsCollection = db.collection("apps");
+
+        // DOM Elements
+        const authSection = document.getElementById('authSection');
+        const appStoreSection = document.getElementById('appStoreSection');
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+        const loginError = document.getElementById('loginError');
+        const signupError = document.getElementById('signupError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const appGrid = document.getElementById('appGrid');
+        const appDetailsModal = new bootstrap.Modal(document.getElementById('appDetailsModal'));
+        let allAppsData = {}; // To store app data locally
+
+        // --- Authentication Logic ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // User is signed in
+                authSection.style.display = 'none';
+                appStoreSection.style.display = 'block';
+                logoutBtn.style.display = 'block';
+                loadApps();
+            } else {
+                // User is signed out
+                authSection.style.display = 'block';
+                appStoreSection.style.display = 'none';
+                logoutBtn.style.display = 'none';
+            }
+        });
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            loginError.textContent = '';
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(error => {
+                    console.error("Login failed:", error);
+                    loginError.textContent = error.message;
+                });
+        });
+
+        signupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            signupError.textContent = '';
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .catch(error => {
+                    console.error("Sign up failed:", error);
+                    signupError.textContent = error.message;
+                });
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        // --- App Store Logic ---
+        
+        // Load apps from Firestore
+        const loadApps = () => {
+            appsCollection.onSnapshot(snapshot => {
+                let appCards = '';
+                allAppsData = {}; // Clear previous data
+                snapshot.forEach(doc => {
+                    const app = doc.data();
+                    const docId = doc.id;
+                    allAppsData[docId] = app; // Store app data with its document ID
+                    
+                    appCards += `
+                        <div class="col">
+                            <div class="card h-100 app-card" onclick="showAppDetails('${docId}')">
+                                <img src="${app.appIconUrl}" class="card-img-top app-icon" alt="${app.appName} Icon">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">${app.appName}</h6>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                appGrid.innerHTML = appCards;
+            }, error => {
+                console.error("Error fetching apps: ", error);
+                appGrid.innerHTML = '<p class="text-danger">Could not load apps.</p>';
+            });
+        };
+
+        // Show app details in the modal
+        window.showAppDetails = (docId) => {
+            const app = allAppsData[docId];
+            if (!app) {
+                console.error("App data not found for ID:", docId);
+                return;
+            }
+
+            // Populate Modal
+            document.getElementById('modalAppName').textContent = app.appName;
+            document.getElementById('modalAppIcon').src = app.appIconUrl;
+            document.getElementById('modalDeveloper').textContent = app.developer;
+            document.getElementById('modalVersion').textContent = app.version;
+            document.getElementById('modalCategory').textContent = app.category;
+            document.getElementById('modalDescription').textContent = app.description;
+            document.getElementById('modalDownloadBtn').href = app.downloadUrl;
+
+            // Populate screenshots
+            const screenshotsContainer = document.getElementById('modalScreenshots');
+            screenshotsContainer.innerHTML = ''; // Clear previous screenshots
+            const screenshotUrls = app.screenshots.split(',').map(url => url.trim());
+            screenshotUrls.forEach(url => {
+                if(url) {
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.classList.add('screenshot-img');
+                    screenshotsContainer.appendChild(img);
+                }
+            });
+
+            appDetailsModal.show();
+        };
+
+    </script>
+</body>
+</html>
